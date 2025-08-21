@@ -1,0 +1,39 @@
+---
+description: 
+globs: src/infrastructure/**
+alwaysApply: false
+---
+# Infrastructure Layer Architectural Rules (`src/infrastructure/`)
+
+**Location**: `src/infrastructure/`
+
+**Purpose**: Implements all the technical details and integrations with the outside world (e.g., APIs, databases, file systems, external tools).
+
+---
+
+## Rules
+
+1.  **IMPLEMENT DOMAIN INTERFACES**:
+    -   In the future, if the domain defines abstract interfaces (e.g., an `IAudioRepository`), this layer will provide the concrete implementations.
+    -   **CAN** import from `src/domain/` for this purpose.
+
+2.  **NO OUTWARD DEPENDENCIES**:
+    -   **MUST NOT** import from `src/application/` or `src/interfaces/`. The infrastructure should not be aware of the specific use cases that use it.
+
+3.  **EXTERNAL-FACING CODE**:
+    -   This is the dedicated home for all external libraries and integrations, such as `elevenlabs`, `ffmpeg`, `pydantic` (for settings), and `openai`.
+
+4.  **CONFIGURATION**:
+    -   All application configuration, including loading from `.env` files, belongs in this layer (`src/infrastructure/config.py`).
+
+---
+
+## Import Restrictions
+
+```
+- allow:
+  - src/domain/  # For implementing domain interfaces and using domain models
+- unless:
+  - src/application/
+  - src/interfaces/
+```

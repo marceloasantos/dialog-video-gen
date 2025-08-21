@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# General DDD Architectural Rules for Byteme
+
+This file defines the high-level architectural principles for the Byteme codebase, based on our Domain-Driven Design (DDD) approach. These general rules complement the detailed, layer-specific rules found in the other `.mdc` files.
+
+---
+
+## 1. The Core Principle: The Dependency Rule
+
+All dependencies within the `src/` directory must point inwards. This means an outer layer can depend on an inner layer, but an inner layer must never depend on an outer layer.
+
+-   **Interfaces Layer** (`src/interfaces/`)
+    -   Depends on -> **Application Layer**
+-   **Application Layer** (`src/application/`)
+    -   Depends on -> **Domain & Infrastructure Layers**
+-   **Infrastructure Layer** (`src/infrastructure/`)
+    -   Depends on -> **Domain Layer** (for interfaces/models)
+-   **Domain Layer** (`src/domain/`)
+    -   **Depends on nothing outside itself.**
+
+This strict, one-way dependency flow is the most important rule for maintaining a clean, decoupled, and testable architecture.
+
+---
+
+## 2. Layer Responsibilities at a Glance
+
+-   **Domain Layer**: The heart of the application. It contains the pure business logic and rules, completely isolated from technical details.
+-   **Application Layer**: The brain of the application's workflows. It orchestrates use cases by coordinating the domain and infrastructure layers.
+-   **Infrastructure Layer**: The hands of the application. It handles all technical, external-facing tasks like API calls, database access, and running external tools.
+-   **Interfaces Layer**: The face of the application. It provides the entry points for users or other systems to interact with the application (e.g., CLI, Web API).
+
+---
+
+## 3. General Development Guidelines
+
+-   **Pydantic for Data Models**: All core data structures (like [dialogue.py](mdc:src/domain/entities/dialogue.py)) in the **Domain Layer** should be defined using `pydantic.BaseModel`. This ensures they are clearly defined, validated, and type-safe.
+
+-   **Dependency Injection**: Avoid hard-coding the creation of dependencies within services. Instead, "inject" them (pass them in as arguments). For example, the [video_production_service.py](mdc:src/application/services/video_production_service.py) receives instances of the various infrastructure adapters it needs to function. This makes services much easier to test in isolation by allowing mock objects to be passed during tests.
+
+-   **Configuration Management**: All configuration details, especially secrets like API keys, must be managed in the **Infrastructure Layer**. The standard practice is to define them in [config.py](mdc:src/infrastructure/config.py) and load them from a `.env` file using the `python-dotenv` library. No other layer should be aware of where configuration comes from.

@@ -1,0 +1,37 @@
+---
+description: 
+globs: src/interfaces/**
+alwaysApply: false
+---
+# Interfaces Layer Architectural Rules (`src/interfaces/`)
+
+**Location**: `src/interfaces/`
+
+**Purpose**: Acts as the entry point for external clients, such as a Command-Line Interface (CLI) or a Web API.
+
+---
+
+## Rules
+
+1.  **DEPENDS ON APPLICATION LAYER**:
+    -   This layer's primary responsibility is to interact with services from the **Application Layer**.
+    -   It should translate user input into calls to application services.
+
+2.  **MINIMAL LOGIC (THIN LAYER)**:
+    -   Keep this layer as thin as possible. Its job is to parse input, call an application service, and present the result (e.g., print to console, return a JSON response).
+    -   **AVOID** placing any business logic here.
+
+3.  **NO DIRECT DOMAIN/INFRASTRUCTURE ACCESS**:
+    -   **MUST NOT** directly import from `src/domain/` or `src/infrastructure/`. All interactions must go through the Application Layer to maintain a clean workflow.
+
+---
+
+## Import Restrictions
+
+```
+- allow:
+  - src/application/
+- unless:
+  - src/domain/
+  - src/infrastructure/
+```

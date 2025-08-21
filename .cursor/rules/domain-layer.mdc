@@ -1,0 +1,41 @@
+---
+description: 
+globs: src/domain/**
+alwaysApply: false
+---
+# Domain Layer Architectural Rules (`src/domain/`)
+
+**Location**: `src/domain/`
+
+**Purpose**: Contains the core business logic, models, and rules of the application. This is the heart of our software. The Domain Layer must remain pure and have no knowledge of any outer layer.
+
+---
+
+## Rules
+
+1.  **NO EXTERNAL DEPENDENCIES**:
+    -   **MUST NOT** import from `src/infrastructure/`, `src/application/`, or `src/interfaces/`.
+    -   This is the most critical rule to maintain the purity of our domain.
+
+2.  **FOCUS ON BUSINESS LOGIC**:
+    -   Code should be pure Python, focused exclusively on business logic.
+    -   **AVOID** all I/O operations (e.g., file access, network calls, database queries).
+
+3.  **STATELESS SERVICES**:
+    -   Domain Services must be stateless. Their output should depend only on the inputs provided.
+
+4.  **DEFINE CORE MODELS**:
+    -   Use `pydantic.BaseModel` for entities (e.g., `Dialogue`) and value objects (e.g., `Line`) to define clear, validated data structures.
+
+---
+
+## Import Restrictions
+
+```
+- allow:
+  - src/domain/
+- unless:
+  - src/infrastructure/
+  - src/application/
+  - src/interfaces/
+```

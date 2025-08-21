@@ -1,0 +1,36 @@
+---
+description: 
+globs: src/application/**
+alwaysApply: false
+---
+# Application Layer Architectural Rules (`src/application/`)
+
+**Location**: `src/application/`
+
+**Purpose**: Orchestrates the application's use cases by acting as a mediator between the interfaces and the core domain.
+
+---
+
+## Rules
+
+1.  **ALLOWED DEPENDENCIES**:
+    -   **CAN** import from `src/domain/` to call business logic and use domain models.
+    -   **CAN** import from `src/infrastructure/` to use repositories, call external APIs, and access other technical services.
+
+2.  **NO BUSINESS LOGIC**:
+    -   This layer should not contain complex business rules. All core logic should be delegated to Domain Services or Entities.
+
+3.  **WORKFLOW COORDINATION**:
+    -   The primary responsibility is to coordinate a sequence of operations: fetch data from infrastructure, use the domain to perform calculations, and use infrastructure to persist the results.
+
+---
+
+## Import Restrictions
+
+```
+- allow:
+  - src/domain/
+  - src/infrastructure/
+- unless:
+  - src/interfaces/
+```
