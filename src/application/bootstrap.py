@@ -4,7 +4,6 @@ from src.infrastructure.audio_processing.generation import AudioGenerationServic
 from src.infrastructure.elevenlabs.client import ElevenLabsClient
 from src.infrastructure.ffmpeg_wrapper.factory import FFmpegFactory
 from src.infrastructure.services.environment_service import (
-    CROP_ALIGNMENT,
     INTRO_JUMPER_MIN_START_TIME,
     PRESIGNED_URL_EXPIRES_IN_SECONDS,
 )
@@ -42,15 +41,12 @@ def bootstrap() -> CreateVideoUseCase:
     voice_config_service = VoiceConfigService(character_repository)
     file_processing_service = FileProcessingService(input_storage)
 
-    crop_alignment = CROP_ALIGNMENT
-
     # Use Case (repositories will be created from provided data at execution time)
     create_video_use_case = CreateVideoUseCase(
         audio_service=audio_service,
         audio_generator=audio_generator,
         subtitle_generator=subtitle_generator,
         media_info_extractor=media_info_extractor,
-        crop_alignment=crop_alignment,
         intro_jumper_min_start_time=INTRO_JUMPER_MIN_START_TIME,
         output_storage=output_storage,
         input_storage=input_storage,

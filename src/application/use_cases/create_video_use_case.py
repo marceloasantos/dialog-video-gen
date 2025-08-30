@@ -16,6 +16,7 @@ from src.infrastructure.audio_processing.generation import AudioGenerationServic
 from src.infrastructure.subtitle_processing.generation import SubtitleGenerator
 from src.infrastructure.ffmpeg_wrapper.interfaces import IMediaInfoExtractor
 import logging
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,6 @@ class CreateVideoUseCase:
         audio_generator: AudioGenerationService,
         subtitle_generator: SubtitleGenerator,
         media_info_extractor: IMediaInfoExtractor,
-        crop_alignment: CropAlignment,
         intro_jumper_min_start_time: int,
         output_storage: IStorage,
         input_storage: IStorage,
@@ -53,7 +53,6 @@ class CreateVideoUseCase:
         # Video-specific configurations
         self.output_storage = output_storage
         self.input_storage = input_storage
-        self.crop_alignment = crop_alignment
         self.intro_jumper_min_start_time = intro_jumper_min_start_time
         self.presigned_url_expires_in_seconds = presigned_url_expires_in_seconds
 
@@ -73,6 +72,7 @@ class CreateVideoUseCase:
         dialogues_data: list,
         characters_data: dict,
         input_video_path: str,
+        crop_alignment: Literal["center", "left"],
     ):
         """
         Execute the video creation workflow.
@@ -97,6 +97,9 @@ class CreateVideoUseCase:
         with self.file_management_service.prepare_input_video(
             input_video_path
         ) as local_input_video_path:
+            # Determine crop alignment using Pydantic coercion from string to enum
+            effective_alignment = CropAlignment(alignment=crop_alignment)
+
             # Create and execute the video production service
             video_production_service = VideoProductionService(
                 audio_service=self.audio_service,
@@ -106,7 +109,7 @@ class CreateVideoUseCase:
                 dialogues=loaded_dialogues,
                 voice_config_service=self.voice_config_service,
                 local_input_video_path=local_input_video_path,
-                crop_alignment=self.crop_alignment,
+                crop_alignment=effective_alignment,
                 intro_jumper_min_start_time=self.intro_jumper_min_start_time,
                 output_storage=self.output_storage,
             )

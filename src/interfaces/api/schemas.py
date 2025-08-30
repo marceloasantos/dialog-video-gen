@@ -33,6 +33,9 @@ class VideoRequest(BaseModel):
     input_video_path: StrictStr = Field(
         description="Path to the input video file in storage (e.g., 'videos/input.mp4')."
     )
+    crop_alignment: Literal["center", "left"] = Field(
+        description="Required crop alignment for 9:16 output. Allowed values: 'center', 'left'.",
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -70,6 +73,7 @@ class VideoRequest(BaseModel):
                     },
                 },
                 "input_video_path": "videos/input.mp4",
+                "crop_alignment": "center",
             }
         }
     )

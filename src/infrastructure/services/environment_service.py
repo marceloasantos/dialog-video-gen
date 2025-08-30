@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, StrictStr, ValidationError
-from src.domain.entities.alignment import CropAlignment as CropAlignmentModel
 
 # Detect Fly.io runtime early
 _RUNNING_ON_FLY = any(
@@ -25,7 +24,6 @@ CACHE_STORAGE_PATH = os.path.join(PROJECT_ROOT, _cache_dir_env)
 
 class _EnvConfig(BaseModel):
     ELEVENLABS_API_KEY: StrictStr
-    CROP_ALIGNMENT: CropAlignmentModel
     INTRO_JUMPER_MIN_START_TIME: int = Field(default=3, ge=0)
 
     # Default expiry for presigned URLs (must be provided by interfaces)
@@ -76,9 +74,6 @@ try:
     if api_key := os.getenv("ELEVENLABS_API_KEY"):
         env_data["ELEVENLABS_API_KEY"] = api_key
 
-    if alignment := os.getenv("CROP_ALIGNMENT"):
-        env_data["CROP_ALIGNMENT"] = {"alignment": alignment}
-
     if min_start_time := os.getenv("INTRO_JUMPER_MIN_START_TIME"):
         env_data["INTRO_JUMPER_MIN_START_TIME"] = int(min_start_time)
 
@@ -107,7 +102,6 @@ except (ValidationError, TypeError, ValueError) as e:
     raise ValueError(f"Environment validation error: {e}")
 
 ELEVENLABS_API_KEY = _env.ELEVENLABS_API_KEY
-CROP_ALIGNMENT = _env.CROP_ALIGNMENT
 INTRO_JUMPER_MIN_START_TIME = _env.INTRO_JUMPER_MIN_START_TIME
 
 # Presigned URL default expiry

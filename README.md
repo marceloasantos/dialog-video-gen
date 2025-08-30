@@ -83,17 +83,15 @@ The application requires API keys and other settings to be configured via enviro
     ELEVENLABS_API_KEY="your_api_key_here"
     
     # Video Production Settings (Optional)
-    CROP_ALIGNMENT=center  # Options: "center", "left" (required, no default applied)
     INTRO_JUMPER_MIN_START_TIME=600  # Non-negative integer (required, no default applied)
     ```
 
 The application uses `python-dotenv` to automatically load these variables at runtime.
 
 **Video Production Settings:**
-- `CROP_ALIGNMENT`: Controls how videos are cropped to 9:16 aspect ratio
-  - `"center"`: Always crops from the center
-  - `"left"`: Always crops from the left side  
 - `INTRO_JUMPER_MIN_START_TIME`: Minimum start time in seconds (prevents selecting from intro)
+
+Crop alignment is now controlled per-request via the API using the required `crop_alignment` field (allowed: `center`, `left`).
 
 ---
 

@@ -183,6 +183,7 @@ async def create_video(video_request: VideoRequest):
             parsed_dialogues,
             parsed_characters,
             input_video_path=video_request.input_video_path,
+            crop_alignment=video_request.crop_alignment,
         )
 
         if successful_videos > 0 and video_ids:

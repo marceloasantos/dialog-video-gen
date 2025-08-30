@@ -2,6 +2,7 @@ curl -X POST 'http://localhost:8000/videos' \
 --header 'Content-Type: application/json' \
 --data '{
     "input_video_path": "video/coding-asmr.mp4",
+    "crop_alignment": "center",
     "dialogues": [
       [
         {
