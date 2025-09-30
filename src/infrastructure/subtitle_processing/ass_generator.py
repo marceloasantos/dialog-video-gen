@@ -2,6 +2,7 @@ import pysubs2
 from pysubs2 import Alignment
 from typing import Dict
 from src.domain.entities.character import Character
+from src.domain.entities.segment_boundary import SegmentBoundary
 
 
 class AssGenerator:
@@ -18,7 +19,7 @@ class AssGenerator:
         margin_v: int,
         outline: int,
         speaker_mapping: Dict[str, Character],
-        segment_boundaries: list[dict],
+        segment_boundaries: list[SegmentBoundary],
     ):
         """
         Generates an ASS file from word-level timestamp data.
@@ -32,7 +33,7 @@ class AssGenerator:
             margin_v (int): The vertical margin from the edge of the video.
             outline (int): The thickness of the text border.
             speaker_mapping (Dict[str, Character]): A mapping from speaker ID to character configuration.
-            segment_boundaries (list[dict]): Deterministic speaker assignment with items like
+            segment_boundaries (list[SegmentBoundary]): Deterministic speaker assignment with items like
                 {"start_s": float, "end_s": float, "speaker_index": int}.
         """
         subs = pysubs2.SSAFile()

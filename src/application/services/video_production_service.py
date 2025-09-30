@@ -6,6 +6,7 @@ from src.domain.entities.character import Character
 from src.domain.entities.alignment import CropAlignment
 
 from src.domain.entities.dialogue import Dialogue
+from src.domain.entities.segment_boundary import SegmentBoundary
 from src.domain.services.speaker_mapping_service import SpeakerMappingService
 from src.domain.ports.storage import IStorage
 from src.domain.ports.repositories import IVoiceConfigService
@@ -103,7 +104,7 @@ class VideoProductionService:
 
             # Compute segment boundaries based on concatenation order
             # Each boundary carries the deterministic speaker_index for that segment
-            segment_boundaries: list[dict] = []
+            segment_boundaries: list[SegmentBoundary] = []
             current_ms = 0
             for line, segment in zip(dialogue.lines, audio_segments):
                 duration_ms = int(len(segment))
@@ -262,7 +263,7 @@ class VideoProductionService:
         alignment: int,
         margin_v: int,
         outline: int,
-        segment_boundaries: list[dict],
+        segment_boundaries: list[SegmentBoundary],
         speaker_mapping: Dict[str, Character] | None = None,
     ):
         print(f"📝 Processing subtitles for: {os.path.basename(output_filename)}")

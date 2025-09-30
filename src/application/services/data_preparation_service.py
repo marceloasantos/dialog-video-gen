@@ -9,6 +9,8 @@ import hashlib
 import os
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+import io
+from PIL import Image
 
 
 class _InMemoryStoredFile(IStoredFile):
@@ -74,13 +76,14 @@ class DataPreparationService:
             content_length = resp.headers.get("Content-Length")
             if content_length is not None:
                 try:
-                    if int(content_length) > MAX_BYTES:
-                        raise ValueError(
-                            f"Image at URL exceeds 10 MB limit (Content-Length: {content_length} bytes)"
-                        )
-                except ValueError:
+                    content_length_int = int(content_length)
+                except (TypeError, ValueError):
                     # If header parsing fails, ignore and fall back to streaming enforcement
-                    pass
+                    content_length_int = None
+                if content_length_int is not None and content_length_int > MAX_BYTES:
+                    raise ValueError(
+                        f"Image at URL exceeds 10 MB limit (Content-Length: {content_length} bytes)"
+                    )
 
             buffer = bytearray()
             chunk_size = 64 * 1024
@@ -91,6 +94,12 @@ class DataPreparationService:
                 buffer.extend(chunk)
                 if len(buffer) > MAX_BYTES:
                     raise ValueError("Image at URL exceeds 10 MB limit during download")
+
+        # Validate that the downloaded bytes represent an actual image
+        try:
+            Image.open(io.BytesIO(buffer)).verify()
+        except Exception as e:
+            raise ValueError(f"Downloaded content is not a valid image: {e}")
 
         # Derive a deterministic display path for validation and extension inference
         parsed = urlparse(url)
@@ -119,8 +128,12 @@ class DataPreparationService:
             # Support HTTP(S) URLs by downloading into an in-memory handle with a 10 MB cap
             if isinstance(image_ref, str) and self._is_http_url(image_ref):
                 image_file = self._download_image_as_handle(image_ref)
-            else:
+            elif isinstance(image_ref, str):
                 image_file = self.input_storage.file(image_ref)
+            else:
+                raise TypeError(
+                    f"Character '{name}' has invalid 'image_file' type: expected str, got {type(image_ref).__name__}"
+                )
 
             domain_characters[name] = Character(
                 voice_id=char_dict["voice_id"],
