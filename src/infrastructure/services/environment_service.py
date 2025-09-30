@@ -56,17 +56,17 @@ class _EnvConfig(BaseModel):
 # Infer production when not explicitly set: default to True on Fly.io
 _prod_env = os.getenv("PRODUCTION")
 if _prod_env is None or _prod_env.strip() == "":
-    _PRODUCTION_RAW = "true" if _RUNNING_ON_FLY else "false"
+    _PRODUCTION_BOOL: bool = True if _RUNNING_ON_FLY else False
 else:
-    _PRODUCTION_RAW = _prod_env
+    _PRODUCTION_BOOL = _prod_env.strip().lower() in {"1", "true", "yes", "on"}
 
 # --- Environment Variables & Configuration ---
 try:
     # Prepare a dictionary of environment variables to pass to the config model.
     # This approach avoids passing `None` for unset variables, allowing Pydantic
     # to apply its default values correctly.
-    env_data = {
-        "PRODUCTION": _PRODUCTION_RAW,
+    env_data: dict[str, str | int | bool] = {
+        "PRODUCTION": _PRODUCTION_BOOL,
         "STORAGE_BACKEND": os.getenv("STORAGE_BACKEND", "tigris"),
     }
 
@@ -95,7 +95,11 @@ try:
         if value := os.getenv(env_var):
             env_data[env_var] = value
 
-    _env = _EnvConfig(**env_data)
+    _model_validate = getattr(_EnvConfig, "model_validate", None)
+    if callable(_model_validate):
+        _env = _model_validate(env_data)
+    else:
+        _env = _EnvConfig.model_validate(env_data)
 except (ValidationError, TypeError, ValueError) as e:
     # Catch validation, type errors (e.g., int(None)), or value errors
     # to provide a consolidated error message.

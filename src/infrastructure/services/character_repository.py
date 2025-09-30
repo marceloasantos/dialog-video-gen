@@ -57,14 +57,8 @@ class CharacterRepository(ICharacterRepository):
                     f"Character '{name}' image_file.relative_path must be storage-relative."
                 )
 
-            # If storage available, ensure the file exists in storage
-            if (
-                self._input_storage
-                and not self._input_storage.file(image_file.relative_path).exists()
-            ):
-                raise RuntimeError(
-                    f"Image file for character '{name}' not found in storage at '{image_file.relative_path}'."
-                )
+            # Existence check is not enforced here, because images may be materialized
+            # into input storage at request time from a remote URL.
 
             loaded_characters[name.lower()] = character
         return loaded_characters

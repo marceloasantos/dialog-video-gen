@@ -93,6 +93,7 @@ class SubtitleGenerator:
         margin_v: int,
         outline: int,
         speaker_mapping: Dict[str, Character],
+        segment_boundaries: list[dict],
     ):
         """
         Generates styled ASS subtitles from an audio file.
@@ -108,5 +109,6 @@ class SubtitleGenerator:
             margin_v=margin_v,
             outline=outline,
             speaker_mapping=speaker_mapping,
+            segment_boundaries=segment_boundaries,
         )
         return output_ass_path

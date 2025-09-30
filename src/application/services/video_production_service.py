@@ -34,6 +34,8 @@ class VideoProductionService:
         crop_alignment: CropAlignment,
         intro_jumper_min_start_time: int,
         output_storage: IStorage,
+        watermark_enabled: bool = False,
+        watermark_text: str | None = None,
     ):
         self.audio_service = audio_service
         self.audio_generator = audio_generator
@@ -45,6 +47,8 @@ class VideoProductionService:
         self.output_storage = output_storage
         self.crop_alignment = crop_alignment
         self.intro_jumper_min_start_time = intro_jumper_min_start_time
+        self.watermark_enabled = watermark_enabled
+        self.watermark_text = watermark_text
 
     def produce_videos(self):
         """
@@ -87,6 +91,32 @@ class VideoProductionService:
                 line_data = {"text": line.text, "speaker": line.speaker}
                 audio_segments.append(self.audio_generator.get_audio_segment(line_data))
 
+            # Map speakers deterministically by dialogue order of first appearance
+            speaker_to_voice_id_map = (
+                SpeakerMappingService.create_speaker_mapping_from_dialogue(dialogue)
+            )
+            # Invert to get voice_id -> speaker_index (as int)
+            voice_id_to_speaker_index: Dict[str, int] = {
+                str(voice_id): int(speaker_id)
+                for speaker_id, voice_id in speaker_to_voice_id_map.items()
+            }
+
+            # Compute segment boundaries based on concatenation order
+            # Each boundary carries the deterministic speaker_index for that segment
+            segment_boundaries: list[dict] = []
+            current_ms = 0
+            for line, segment in zip(dialogue.lines, audio_segments):
+                duration_ms = int(len(segment))
+                speaker_index = voice_id_to_speaker_index[str(line.speaker)]
+                segment_boundaries.append(
+                    {
+                        "start_s": current_ms / 1000.0,
+                        "end_s": (current_ms + duration_ms) / 1000.0,
+                        "speaker_index": speaker_index,
+                    }
+                )
+                current_ms += duration_ms
+
             final_audio = self.audio_service.concatenate_audios(audio_segments)
 
             # Export concatenated audio to a temporary WAV file
@@ -97,10 +127,6 @@ class VideoProductionService:
 
             audio_segments.clear()
             del final_audio
-
-            speaker_to_voice_id_map = (
-                SpeakerMappingService.create_speaker_mapping_from_dialogue(dialogue)
-            )
 
             # Resolve character configurations for each speaker
             resolved_configs: Dict[str, Character | None] = {
@@ -141,6 +167,7 @@ class VideoProductionService:
                 alignment=subtitle_style_options["alignment"],
                 margin_v=subtitle_style_options["margin_v"],
                 outline=subtitle_style_options["outline"],
+                segment_boundaries=segment_boundaries,
             )
 
             video_filename = self.local_input_video_path
@@ -155,8 +182,9 @@ class VideoProductionService:
             # Intro jumper feature: never select video segments from the first N minutes
             # Configured via INTRO_JUMPER_MIN_START_TIME environment variable
 
+            start_time: float
             if video_duration <= audio_duration:
-                start_time = 0
+                start_time = 0.0
                 print(
                     f"📹 Video duration ({video_duration:.1f}s) ≤ audio duration ({audio_duration:.1f}s), starting from beginning"
                 )
@@ -171,7 +199,7 @@ class VideoProductionService:
                     print(
                         f"⚠️ Video too short to skip intro ({self.intro_jumper_min_start_time}s), starting from beginning"
                     )
-                    start_time = 0
+                    start_time = 0.0
                 else:
                     start_time = random.uniform(min_start_time, max_start_time)
                     print(
@@ -197,6 +225,8 @@ class VideoProductionService:
                     start_time=start_time,
                     output_filename=final_video_name,
                     speaker_mapping=speaker_config_map,
+                    watermark_enabled=self.watermark_enabled,
+                    watermark_text=self.watermark_text,
                 )
                 # Persist output into storage
                 with open(final_video_name, "rb") as f:
@@ -232,7 +262,8 @@ class VideoProductionService:
         alignment: int,
         margin_v: int,
         outline: int,
-        speaker_mapping: dict = None,
+        segment_boundaries: list[dict],
+        speaker_mapping: Dict[str, Character] | None = None,
     ):
         print(f"📝 Processing subtitles for: {os.path.basename(output_filename)}")
 
@@ -245,7 +276,8 @@ class VideoProductionService:
             alignment=alignment,
             margin_v=margin_v,
             outline=outline,
-            speaker_mapping={k: v for k, v in speaker_mapping.items()},
+            speaker_mapping={k: v for k, v in (speaker_mapping or {}).items()},
+            segment_boundaries=segment_boundaries,
         )
 
         print(f"✅ Subtitles processed: {os.path.basename(ass_filename)}")

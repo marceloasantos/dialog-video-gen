@@ -4,7 +4,7 @@ from src.application.services import (
     FileManagementService,
     VideoRetrievalService,
 )
-from src.domain.entities.alignment import CropAlignment
+from src.domain.entities.alignment import CropAlignment, CropAlignmentType
 from src.domain.ports.storage import IStorage
 from src.domain.ports.repositories import (
     ICharacterRepository,
@@ -73,6 +73,8 @@ class CreateVideoUseCase:
         characters_data: dict,
         input_video_path: str,
         crop_alignment: Literal["center", "left"],
+        watermark: bool = False,
+        watermark_text: str | None = None,
     ):
         """
         Execute the video creation workflow.
@@ -97,8 +99,10 @@ class CreateVideoUseCase:
         with self.file_management_service.prepare_input_video(
             input_video_path
         ) as local_input_video_path:
-            # Determine crop alignment using Pydantic coercion from string to enum
-            effective_alignment = CropAlignment(alignment=crop_alignment)
+            # Determine crop alignment using enum coercion from string to enum
+            effective_alignment = CropAlignment(
+                alignment=CropAlignmentType(crop_alignment)
+            )
 
             # Create and execute the video production service
             video_production_service = VideoProductionService(
@@ -112,6 +116,9 @@ class CreateVideoUseCase:
                 crop_alignment=effective_alignment,
                 intro_jumper_min_start_time=self.intro_jumper_min_start_time,
                 output_storage=self.output_storage,
+                # new
+                watermark_enabled=watermark,
+                watermark_text=watermark_text,
             )
             logger.info("Starting video production for %s dialogues", num_dialogues)
 

@@ -25,12 +25,15 @@ class VideoGenerationPipeline:
         alignment: CropAlignment,
         start_time: float,
         speaker_mapping: Dict,
+        watermark_enabled: bool = False,
+        watermark_text: str | None = None,
     ) -> None:
         """
         Complete video generation pipeline using ffmpeg:
         1. Crop video to 9:16 aspect ratio
         2. Add styled subtitles from an ASS file and speaker images
-        3. Combine with audio
+        3. Optionally draw a watermark text at the top
+        4. Combine with audio
 
         Args:
             video_file: Input video file path
@@ -77,15 +80,23 @@ class VideoGenerationPipeline:
                 latest_video, ass_file, video_with_subs
             )
 
-            # Step 4: Combine video with audio
+            # Step 4 (optional): Add watermark text at the top
+            if watermark_enabled and watermark_text:
+                video_with_wm = os.path.join(temp_dir, "video_with_watermark.mp4")
+                logger.info("Step 4: Drawing watermark text at the top...")
+                latest_video = self.video_processor.add_text_watermark_to_video(
+                    latest_video, video_with_wm, watermark_text
+                )
+
+            # Step 5: Combine video with audio
             video_with_audio = os.path.join(temp_dir, "video_with_audio.mp4")
-            logger.info("Step 4: Combining video with audio...")
+            logger.info("Step 5: Combining video with audio...")
             latest_video = self.video_processor.combine_video_audio(
                 latest_video, audio_file, video_with_audio
             )
 
-            # Step 5: Copy to destination
-            logger.info("Step 5: Copying video to destination...")
+            # Step 6: Copy to destination
+            logger.info("Step 6: Copying video to destination...")
             self.video_processor.copy_video_to_destination(latest_video, output_file)
 
             logger.info(f"Video generation completed successfully: {output_file}")

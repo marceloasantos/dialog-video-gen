@@ -98,7 +98,7 @@ def custom_openapi():
     return app.openapi_schema
 
 
-app.openapi = custom_openapi
+app.openapi = custom_openapi  # type: ignore[assignment]
 
 
 # Simple per-IP rate limiter for the POST /videos endpoint (MVP)
@@ -184,6 +184,8 @@ async def create_video(video_request: VideoRequest):
             parsed_characters,
             input_video_path=video_request.input_video_path,
             crop_alignment=video_request.crop_alignment,
+            watermark=video_request.watermark,
+            watermark_text=video_request.watermark_text,
         )
 
         if successful_videos > 0 and video_ids:

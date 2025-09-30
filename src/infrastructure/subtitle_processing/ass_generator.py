@@ -1,4 +1,5 @@
 import pysubs2
+from pysubs2 import Alignment
 from typing import Dict
 from src.domain.entities.character import Character
 
@@ -17,6 +18,7 @@ class AssGenerator:
         margin_v: int,
         outline: int,
         speaker_mapping: Dict[str, Character],
+        segment_boundaries: list[dict],
     ):
         """
         Generates an ASS file from word-level timestamp data.
@@ -30,33 +32,32 @@ class AssGenerator:
             margin_v (int): The vertical margin from the edge of the video.
             outline (int): The thickness of the text border.
             speaker_mapping (Dict[str, Character]): A mapping from speaker ID to character configuration.
+            segment_boundaries (list[dict]): Deterministic speaker assignment with items like
+                {"start_s": float, "end_s": float, "speaker_index": int}.
         """
         subs = pysubs2.SSAFile()
-
-        # Define styles for each speaker with a secondary color for the karaoke effect
-        # PrimaryColour is the highlighted text, SecondaryColour is the upcoming text.
-        style_args = {
-            "fontname": "Bangers",
-            "fontsize": font_size,
-            "outlinecolor": pysubs2.Color(0, 0, 0),
-            "borderstyle": 1,
-            "outline": outline,
-            "shadow": 1,
-            "alignment": alignment,
-            "marginv": margin_v,
-        }
 
         if not speaker_mapping:
             raise ValueError(
                 "A speaker_mapping must be provided to define subtitle styles."
             )
 
+        # Define styles for each speaker with a secondary color for the karaoke effect
         for speaker_id, config in speaker_mapping.items():
             style_name = f"speaker_{speaker_id}"
             primary_color = pysubs2.Color(*config.primary_color)
             secondary_color = pysubs2.Color(*config.secondary_color)
             subs.styles[style_name] = pysubs2.SSAStyle(
-                primarycolor=primary_color, secondarycolor=secondary_color, **style_args
+                fontname="Bangers",
+                fontsize=float(font_size),
+                primarycolor=primary_color,
+                secondarycolor=secondary_color,
+                outlinecolor=pysubs2.Color(0, 0, 0),
+                borderstyle=1,
+                outline=float(outline),
+                shadow=float(1),
+                alignment=Alignment(alignment),
+                marginv=int(margin_v),
             )
 
         words = [
@@ -65,6 +66,33 @@ class AssGenerator:
         if not words:
             subs.save(output_ass_path)
             return
+
+        # Always override diarizer labels to ensure speaker indices match dialogue mapping
+        norm = [
+            (
+                float(b.get("start_s", 0.0)),
+                float(b.get("end_s", 0.0)),
+                int(b.get("speaker_index", 0)),
+            )
+            for b in segment_boundaries
+        ]
+        norm.sort(key=lambda x: x[0])
+
+        def assign_speaker_index(word_start: float) -> int:
+            for start, end, idx in norm:
+                if start <= word_start < end:
+                    return idx
+            # Fallback: keep diarizer's last digit if present, else default to 0
+            sid = str(words[0].get("speaker_id", "speaker_0"))
+            try:
+                return int(str(sid).split("_")[-1])
+            except Exception:
+                return 0
+
+        for w in words:
+            ws = float(w.get("start", 0.0))
+            idx = assign_speaker_index(ws)
+            w["speaker_id"] = f"speaker_{idx}"
 
         # Group words into subtitle lines
         lines = []
