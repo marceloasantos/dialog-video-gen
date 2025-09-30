@@ -24,3 +24,4 @@ characters.json
 input_storage/
 
 .env.fly
+fly.toml

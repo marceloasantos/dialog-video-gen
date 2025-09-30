@@ -12,20 +12,6 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 
 ## Optional Video Production Settings
 
-### CROP_ALIGNMENT
-Controls how the video is cropped to 9:16 aspect ratio.
-
-**Options:**
-- "center": Always crops from the center of the video
-- "left": Always crops from the left side of the video
-
-Required: must be either "center" or "left" (no default applied)
-
-**Example:**
-```
-CROP_ALIGNMENT=center
-```
-
 ### INTRO_JUMPER_MIN_START_TIME
 Minimum start time in seconds for video cropping. This ensures video segments are never selected from the first N minutes of the source video.
 
@@ -40,6 +26,8 @@ INTRO_JUMPER_MIN_START_TIME=300
 INTRO_JUMPER_MIN_START_TIME=900
 ```
 
+Note: Crop alignment is now controlled per-request via the API using the `crop_alignment` field ("center" or "left") and is required in each request. There is no environment variable for crop alignment anymore.
+
 ## Complete .env Example
 
 Create a `.env` file in the project root with:
@@ -49,14 +37,12 @@ Create a `.env` file in the project root with:
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 
 # Video Production Settings
-CROP_ALIGNMENT=center
 INTRO_JUMPER_MIN_START_TIME=600
 ```
 
 ## Validation
 
 The system validates these settings on startup and shows clear error messages if:
-- Invalid crop alignment values are provided
 - Negative intro jumper times are specified
 - Required environment variables are missing
 

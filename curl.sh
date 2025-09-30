@@ -1,24 +1,37 @@
 curl -X POST 'http://localhost:8000/videos' \
 --header 'Content-Type: application/json' \
 --data '{
-    "input_video_path": "video/coding-asmr.mp4",
+    "input_video_path": "video/subway.mp4",
+    "crop_alignment": "center",
     "dialogues": [
       [
         {
-          "character": "stewie",
-          "phrase": "Bom dia, eu sou o Stewie Griffin, vamos ver o que acontece"
+          "character": "nerd",
+          "phrase": "Cara, o que é essa Pindaiba Tech?"
         },
         {
-          "character": "peter",
-          "phrase": "Bom dia, eu sou o Peter Griffin, vamos ver o que acontece"
+          "character": "careca",
+          "phrase": "É uma startup de IA que cria vídeos automáticos!"
+        },
+        {
+          "character": "nerd",
+          "phrase": "Sério? Tipo deepfake?"
+        },
+        {
+          "character": "careca",
+          "phrase": "Não, cara! Eles fazem conteúdo educativo com personagens virtuais!"
+        },
+        {
+          "character": "nerd",
+          "phrase": "Massa! Futuro chegou mesmo!"
         }
       ]
     ],
     "characters": {
-        "peter": {
-            "voice_id": "MnLB3WqmrDuaBBzpe8tM",
-            "image_file": "images/peter.png",
-            "position": "bottom_left",
+        "nerd": {
+            "voice_id": "2BJW5coyhAzSr8STdHbE",
+            "image_file": "images/nerd.png",
+            "position": "bottom_right",
             "scale": 0.5,
             "margin": 0,
             "primary_color": [
@@ -33,10 +46,10 @@ curl -X POST 'http://localhost:8000/videos' \
                 128
             ]
         },
-        "stewie": {
-            "voice_id": "peBmLMo9G6E3bSbuVXeV",
-            "image_file": "images/stewie.png",
-            "position": "bottom_right",
+        "careca": {
+            "voice_id": "tTZ0TVc9Q1bbWngiduLK",
+            "image_file": "images/father.png",
+            "position": "bottom_left",
             "scale": 0.6,
             "margin": 0,
             "primary_color": [
@@ -51,5 +64,7 @@ curl -X POST 'http://localhost:8000/videos' \
                 128
             ]
         }
-    }
+    },
+    "watermark": true,
+    "watermark_text": "pindaiba.vercel.app"
 }'

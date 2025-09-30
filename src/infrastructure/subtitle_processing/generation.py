@@ -5,6 +5,7 @@ from typing import Dict
 from src.infrastructure.elevenlabs import ElevenLabsClient
 from src.domain.ports.storage import IStorage
 from src.domain.entities.character import Character
+from src.domain.entities.segment_boundary import SegmentBoundary
 from .ass_generator import AssGenerator
 
 
@@ -93,6 +94,7 @@ class SubtitleGenerator:
         margin_v: int,
         outline: int,
         speaker_mapping: Dict[str, Character],
+        segment_boundaries: list[SegmentBoundary],
     ):
         """
         Generates styled ASS subtitles from an audio file.
@@ -108,5 +110,6 @@ class SubtitleGenerator:
             margin_v=margin_v,
             outline=outline,
             speaker_mapping=speaker_mapping,
+            segment_boundaries=segment_boundaries,
         )
         return output_ass_path

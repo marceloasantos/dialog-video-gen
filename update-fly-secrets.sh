@@ -29,7 +29,6 @@ Notes:
 - Drops comments, blank lines, and empty values
 - Strips wrapping quotes in values
 - Normalizes PRODUCTION to true/false
-- Normalizes CROP_ALIGNMENT to center|left (defaults to center if invalid)
 - Removes unused storage keys based on STORAGE_BACKEND (tigris|filesystem)
 EOF
 }
@@ -110,10 +109,6 @@ BEGIN { OFS = "=" }
 		low=val; for(i=1;i<=length(val);i++){ c=substr(val,i,1); low=tolower(val) }
 		if (low=="true" || low=="1" || low=="yes") val="true"; else val="false"
 	}
-	if (key=="CROP_ALIGNMENT") {
-		low=tolower(val)
-		if (low!="center" && low!="left") val="center"; else val=low
-	}
 	pairs[key]=val
 	order[++n]=key
 }
@@ -151,4 +146,4 @@ case "$MODE" in
 		;;
 	*)
 		echo "Unknown mode: $MODE" >&2; exit 1;;
-esac 
+	esac 

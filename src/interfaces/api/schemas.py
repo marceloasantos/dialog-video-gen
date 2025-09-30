@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, StrictStr, model_validator
 from pydantic import ConfigDict
-from typing import List, Dict, Tuple, Literal, Annotated
+from typing import List, Dict, Tuple, Literal, Annotated, Self
 
 
 class DialogueLine(BaseModel):
@@ -10,7 +10,12 @@ class DialogueLine(BaseModel):
 
 class Character(BaseModel):
     voice_id: StrictStr
-    image_file: StrictStr
+    image_file: StrictStr = Field(
+        description=(
+            "Either a storage-relative image path (e.g., 'images/peter.png') or an HTTP(S) URL. "
+            "When a URL is provided, the image will be downloaded and must be at most 10 MB."
+        )
+    )
     position: Literal["bottom_left", "bottom_right", "bottom_center"]
     scale: float = Field(gt=0.0)
     margin: int = Field(ge=0)
@@ -32,6 +37,17 @@ class VideoRequest(BaseModel):
     characters: Dict[StrictStr, Character]
     input_video_path: StrictStr = Field(
         description="Path to the input video file in storage (e.g., 'videos/input.mp4')."
+    )
+    crop_alignment: Literal["center", "left"] = Field(
+        description="Required crop alignment for 9:16 output. Allowed values: 'center', 'left'.",
+    )
+    watermark: bool = Field(
+        default=False,
+        description="When true, writes a text watermark at the top of the video.",
+    )
+    watermark_text: StrictStr | None = Field(
+        default=None,
+        description="Text to draw as a watermark at the top when 'watermark' is true.",
     )
 
     model_config = ConfigDict(
@@ -70,12 +86,15 @@ class VideoRequest(BaseModel):
                     },
                 },
                 "input_video_path": "videos/input.mp4",
+                "crop_alignment": "center",
+                "watermark": True,
+                "watermark_text": "Byteme",
             }
         }
     )
 
     @model_validator(mode="after")
-    def validate_dialogue_characters_exist(self):  # type: ignore[override]
+    def validate_dialogue_characters_exist(self) -> Self:  # type: ignore[override]
         if not self.dialogues:
             raise ValueError("At least one dialogue is required")
 
@@ -93,5 +112,10 @@ class VideoRequest(BaseModel):
             raise ValueError(
                 f"Unknown character(s) referenced in dialogues: {missing_str}. "
                 "Every character used in dialogues must be defined in 'characters'."
+            )
+
+        if self.watermark and not self.watermark_text:
+            raise ValueError(
+                "'watermark_text' must be provided when 'watermark' is true."
             )
         return self

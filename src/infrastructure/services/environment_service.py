@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, StrictStr, ValidationError
-from src.domain.entities.alignment import CropAlignment as CropAlignmentModel
 
 # Detect Fly.io runtime early
 _RUNNING_ON_FLY = any(
@@ -25,7 +24,6 @@ CACHE_STORAGE_PATH = os.path.join(PROJECT_ROOT, _cache_dir_env)
 
 class _EnvConfig(BaseModel):
     ELEVENLABS_API_KEY: StrictStr
-    CROP_ALIGNMENT: CropAlignmentModel
     INTRO_JUMPER_MIN_START_TIME: int = Field(default=3, ge=0)
 
     # Default expiry for presigned URLs (must be provided by interfaces)
@@ -58,26 +56,23 @@ class _EnvConfig(BaseModel):
 # Infer production when not explicitly set: default to True on Fly.io
 _prod_env = os.getenv("PRODUCTION")
 if _prod_env is None or _prod_env.strip() == "":
-    _PRODUCTION_RAW = "true" if _RUNNING_ON_FLY else "false"
+    _PRODUCTION_BOOL: bool = True if _RUNNING_ON_FLY else False
 else:
-    _PRODUCTION_RAW = _prod_env
+    _PRODUCTION_BOOL = _prod_env.strip().lower() in {"1", "true", "yes", "on"}
 
 # --- Environment Variables & Configuration ---
 try:
     # Prepare a dictionary of environment variables to pass to the config model.
     # This approach avoids passing `None` for unset variables, allowing Pydantic
     # to apply its default values correctly.
-    env_data = {
-        "PRODUCTION": _PRODUCTION_RAW,
+    env_data: dict[str, str | int | bool] = {
+        "PRODUCTION": _PRODUCTION_BOOL,
         "STORAGE_BACKEND": os.getenv("STORAGE_BACKEND", "tigris"),
     }
 
     # Conditionally add variables that might be unset
     if api_key := os.getenv("ELEVENLABS_API_KEY"):
         env_data["ELEVENLABS_API_KEY"] = api_key
-
-    if alignment := os.getenv("CROP_ALIGNMENT"):
-        env_data["CROP_ALIGNMENT"] = {"alignment": alignment}
 
     if min_start_time := os.getenv("INTRO_JUMPER_MIN_START_TIME"):
         env_data["INTRO_JUMPER_MIN_START_TIME"] = int(min_start_time)
@@ -100,14 +95,17 @@ try:
         if value := os.getenv(env_var):
             env_data[env_var] = value
 
-    _env = _EnvConfig(**env_data)
+    _model_validate = getattr(_EnvConfig, "model_validate", None)
+    if callable(_model_validate):
+        _env = _model_validate(env_data)
+    else:
+        _env = _EnvConfig.model_validate(env_data)
 except (ValidationError, TypeError, ValueError) as e:
     # Catch validation, type errors (e.g., int(None)), or value errors
     # to provide a consolidated error message.
     raise ValueError(f"Environment validation error: {e}")
 
 ELEVENLABS_API_KEY = _env.ELEVENLABS_API_KEY
-CROP_ALIGNMENT = _env.CROP_ALIGNMENT
 INTRO_JUMPER_MIN_START_TIME = _env.INTRO_JUMPER_MIN_START_TIME
 
 # Presigned URL default expiry

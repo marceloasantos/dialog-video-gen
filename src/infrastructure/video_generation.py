@@ -10,6 +10,8 @@ def generate_video(
     start_time: float,
     output_filename: str,
     speaker_mapping: dict,
+    watermark_enabled: bool = False,
+    watermark_text: str | None = None,
 ):
     """
     Generate video using pure ffmpeg pipeline for maximum performance.
@@ -17,7 +19,7 @@ def generate_video(
     This function:
     1. Crops the video to 9:16 aspect ratio
     2. Adds subtitles from ASS file
-    3. Combines with audio track
+    3. Combines with audio
     4. Outputs final video file
 
     All operations use ffmpeg directly, avoiding moviepy overhead.
@@ -30,6 +32,8 @@ def generate_video(
             start_time: Start time in seconds for video cropping
             output_filename: Output file name
             speaker_mapping: A mapping of speaker IDs to voice configurations.
+            watermark_enabled: Whether to draw a watermark text at the top.
+            watermark_text: Text content to draw when watermark is enabled.
     """
 
     # Initialize FFmpeg components
@@ -45,4 +49,6 @@ def generate_video(
         alignment=alignment,
         start_time=start_time,
         speaker_mapping=speaker_mapping,
+        watermark_enabled=watermark_enabled,
+        watermark_text=watermark_text,
     )

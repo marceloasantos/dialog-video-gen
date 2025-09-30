@@ -30,7 +30,7 @@ class VideoProcessor:
         self.media_info_extractor = media_info_extractor
         self.file_validator = file_validator
         self.input_storage = input_storage
-        self._temp_image_files = []
+        self._temp_image_files: list[str] = []
 
     def _prepare_image_from_storage(self, image_source) -> str:
         """
@@ -108,7 +108,8 @@ class VideoProcessor:
                 # Merge if same speaker and gap is small (e.g., < 0.2s)
                 if (
                     next_segment["id"] == current_segment["id"]
-                    and (next_segment["start"] - current_segment["end"]) < 0.2
+                    and (float(next_segment["start"]) - float(current_segment["end"]))
+                    < 0.2
                 ):
                     current_segment["end"] = next_segment["end"]
                 else:
@@ -119,14 +120,14 @@ class VideoProcessor:
         # Third pass: extend each speaker's time until the next speaker appears
         speaker_segments = []
         for i, segment in enumerate(merged_segments):
-            start_time = segment["start"]
+            start_time = float(segment["start"])  # ensure type
             speaker_id = segment["id"]
 
             # Find the start time of the next segment with a different speaker
             next_start_time = None
             for j in range(i + 1, len(merged_segments)):
                 if merged_segments[j]["id"] != speaker_id:
-                    next_start_time = merged_segments[j]["start"]
+                    next_start_time = float(merged_segments[j]["start"])  # ensure type
                     break
 
             # If no next different speaker, extend to video duration or fallback
@@ -134,7 +135,7 @@ class VideoProcessor:
                 next_start_time if next_start_time is not None else video_duration
             )
             if extended_end_time is None:  # Fallback if no duration and no next speaker
-                extended_end_time = segment["end"] + 2.0
+                extended_end_time = float(segment["end"]) + 2.0
 
             speaker_segments.append((start_time, extended_end_time, speaker_id))
 
@@ -249,7 +250,7 @@ class VideoProcessor:
         alignment: CropAlignmentModel,
         target_aspect: str = "9:16",
         start_time: float = 0,
-        duration: float = None,
+        duration: float | None = None,
     ) -> str:
         """
         Crop video to target aspect ratio using ffmpeg
@@ -534,3 +535,52 @@ class VideoProcessor:
         self.command_executor.run_ffmpeg_command(args, timeout=300)
         logger.info(f"Video copied to destination successfully: {destination_video}")
         return destination_video
+
+    def add_text_watermark_to_video(
+        self, input_video: str, output_video: str, text: str
+    ) -> str:
+        """Draw a text watermark at the top of the video using ffmpeg drawtext."""
+        if not self.file_validator.validate_file_exists(input_video):
+            raise FFmpegError(f"Input video file not found: {input_video}")
+
+        # Escape characters for drawtext
+        escaped_text = (
+            text.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+        )
+
+        # Common font found on most Linux distros; can be overridden later if needed
+        fontfile = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        if not os.path.exists(fontfile):
+            # Fallback: let ffmpeg pick default font if available
+            drawtext_expr = (
+                f"drawtext=text='{escaped_text}':fontcolor=white@0.6:fontsize=32:"
+                "box=1:boxcolor=black@0.25:boxborderw=8:x=(w-text_w)/2:y=40"
+            )
+        else:
+            drawtext_expr = (
+                f"drawtext=fontfile='{fontfile}':text='{escaped_text}':fontcolor=white@0.6:fontsize=32:"
+                "box=1:boxcolor=black@0.25:boxborderw=8:x=(w-text_w)/2:y=40"
+            )
+
+        args = [
+            "-i",
+            input_video,
+            "-vf",
+            drawtext_expr,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-crf",
+            "23",
+            "-threads",
+            "8",
+            "-c:a",
+            "copy",
+            "-y",
+            output_video,
+        ]
+
+        self.command_executor.run_ffmpeg_command(args, timeout=300)
+        logger.info(f"Watermark added successfully to {output_video}")
+        return output_video

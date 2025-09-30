@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for bytemeguyguy on 2025-08-18T23:54:37-03:00
+# fly.toml app configuration file generated for dialog-video-gen on 2025-08-18T23:54:37-03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'replace-me'
-primary_region = 'please-replace-me-too'
+app = 'bytemeguyguy'
+primary_region = 'gig'
 
 [build]
 
@@ -16,6 +16,6 @@ primary_region = 'please-replace-me-too'
   processes = ['app']
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'performance-1x'
+  memory = '2gb'
+  cpu_kind = 'performance'
   cpus = 1
